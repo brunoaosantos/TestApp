@@ -92,7 +92,7 @@ public class MainActivity extends AppCompatActivity
     public void requestUpdatesHandler(View view) {
 //Set the activity detection interval. I’m using 5 seconds//
         Task<Void> task = mActivityRecognitionClient.requestActivityUpdates(
-                8000,
+                5000,
                 getActivityDetectionPendingIntent());
         task.addOnSuccessListener(new OnSuccessListener<Void>() {
             @Override
@@ -117,10 +117,11 @@ public class MainActivity extends AppCompatActivity
         mAdapter.updateActivities(detectedActivities);
 
         for (DetectedActivity activity : detectedActivities) {
-            System.out.println("atividade -------- " + activity.getType() + "  -----  " + activity.getConfidence());
             //write the activities to the file
             writeFile(Integer.toString(activity.getType()), Integer.toString(activity.getConfidence()));
         }
+        //to write a blank line on the test.txt file to separate different write times
+        writeFile(" ", " ");
     }
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String s) {
@@ -161,7 +162,6 @@ public class MainActivity extends AppCompatActivity
     public void checkPermission(String permission){
         String[] PERMISSIONS_STORAGE = {Manifest.permission.WRITE_EXTERNAL_STORAGE};
         int check = ContextCompat.checkSelfPermission(this, permission);
-        System.out.println(check + "   111111111111111");
 
         if (check != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(
