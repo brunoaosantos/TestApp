@@ -1,16 +1,19 @@
 package com.example.brunosantos.testapp;
 
-import java.util.ArrayList;
-import java.lang.reflect.Type;
-import android.content.Context;
-import com.google.gson.Gson;
-import android.content.Intent;
+import android.annotation.SuppressLint;
 import android.app.IntentService;
-import android.preference.PreferenceManager;
+import android.content.Context;
+import android.content.Intent;
 import android.content.res.Resources;
-import com.google.gson.reflect.TypeToken;
+import android.preference.PreferenceManager;
+
 import com.google.android.gms.location.ActivityRecognitionResult;
 import com.google.android.gms.location.DetectedActivity;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
+import java.lang.reflect.Type;
+import java.util.ArrayList;
 //Extend IntentService//
 public class ActivityIntentService extends IntentService {
     protected static final String TAG = "Activity";
@@ -44,6 +47,7 @@ public class ActivityIntentService extends IntentService {
     }
 //Convert the code for the detected activity type, into the corresponding string//
 
+    @SuppressLint("StringFormatInvalid")
     static String getActivityString(Context context, int detectedActivityType) {
         Resources resources = context.getResources();
         switch(detectedActivityType) {

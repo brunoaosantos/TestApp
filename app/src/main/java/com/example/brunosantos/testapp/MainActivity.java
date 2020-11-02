@@ -60,11 +60,11 @@ public class MainActivity extends AppCompatActivity
                 writeFile("WALKING", "");
             }
         });
-        Button carButton = (Button)findViewById(R.id.car);
-        carButton.setOnClickListener(new View.OnClickListener() {
+        Button stairsButton = (Button)findViewById(R.id.stairs);
+        stairsButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                writeFile("CAR", "");
+                writeFile("STAIRS", "");
             }
         });
         Button bicycleButton = (Button)findViewById(R.id.bicycle);
@@ -144,7 +144,7 @@ public class MainActivity extends AppCompatActivity
                 raf.writeBytes(toWrite);
                 raf.close();
 
-                Toast.makeText(this, "Saved line", Toast.LENGTH_SHORT).show();
+                //Toast.makeText(this, "Saved line", Toast.LENGTH_SHORT).show();
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -155,7 +155,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     public boolean isExternalStorageWritable() {
-        System.out.println(Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState()));
+        //System.out.println(Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState()));
         return Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState());
     }
 
@@ -164,6 +164,7 @@ public class MainActivity extends AppCompatActivity
         int check = ContextCompat.checkSelfPermission(this, permission);
 
         if (check != PackageManager.PERMISSION_GRANTED) {
+            //if the app is not allowed to write in the external storage it will ask the user to give permission
             ActivityCompat.requestPermissions(
                     this,
                     PERMISSIONS_STORAGE,

@@ -15,10 +15,10 @@
         android:text="@string/walking" />
 
     <Button
-        android:id="@+id/car"
+        android:id="@+id/stairs"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="car" />
+        android:text="STAIRS" />
 
     <Button
         android:id="@+id/bicycle"
