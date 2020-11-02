@@ -26,6 +26,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
+import java.util.Arrays;
+
 public class MainActivity extends AppCompatActivity
         implements SharedPreferences.OnSharedPreferenceChangeListener {
     private Context mContext;
@@ -57,21 +59,21 @@ public class MainActivity extends AppCompatActivity
         walkingButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                writeFile("WALKING", "");
+                writeToFile(new String[]{"WALKING"});
             }
         });
         Button stairsButton = (Button)findViewById(R.id.stairs);
         stairsButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                writeFile("STAIRS", "");
+                writeToFile(new String[]{"STAIRS"});
             }
         });
         Button bicycleButton = (Button)findViewById(R.id.bicycle);
         bicycleButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                writeFile("BICYCLE", "");
+                writeToFile(new String[]{"BICYCLE"});
             }
         });
 
@@ -116,13 +118,40 @@ public class MainActivity extends AppCompatActivity
 
         mAdapter.updateActivities(detectedActivities);
 
+        /** probabilities is an array that stores all 8 possible activities detected by
+         * Google Activity Recognition, starting all at zero because only the activities with
+         * probability values higher than zero are on detectedActivities
+         */
+        String[] probabilities = {"0","0","0","0","0","0","0","0"};
+
         for (DetectedActivity activity : detectedActivities) {
-            //write the activities to the file
-            writeFile(Integer.toString(activity.getType()), Integer.toString(activity.getConfidence()));
+            /**
+             * Google Activity Recognition can detect 8 different activities,
+             * each assigned to a respective value;
+             * IN_VEHICLE -> 0
+             *ON_BICYCLE -> 1
+             * ON_FOOT -> 2
+             * RUNNING -> 8
+             * STILL -> 3
+             * TILTING -> 5
+             * UNKNOWN -> 4
+             * WALKING -> 7
+             */
+            if(activity.getType() < 6) {
+                probabilities[activity.getType()] = Integer.toString(activity.getConfidence());
+            }
+            else {
+                /**
+                 * It is necessary to subtract one to the array position ince there is no number 6
+                 * it jumps from 5 to 7 and 8
+                 */
+                probabilities[activity.getType()-1] = Integer.toString(activity.getConfidence());
+            }
         }
-        //to write a blank line on the test.txt file to separate different write times
-        writeFile(" ", " ");
+        //write the activities to the file
+        writeToFile(probabilities);
     }
+
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String s) {
         if (s.equals(DETECTED_ACTIVITY)) {
@@ -130,21 +159,21 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    public void writeFile(String activityType, String activityConfidence) {
+    public void writeToFile(String[] probabilities) {
         if(isExternalStorageWritable()) {
             checkPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE);
             File externalStorageDir = Environment.getExternalStorageDirectory();
             File myFile = new File(externalStorageDir, "test.txt");
 
             try {
-                String toWrite = activityType + ":" + activityConfidence + "\n\r";
+                String toWrite = Arrays.toString(probabilities)
+                        .replace("[","")
+                        .replace("]","") + "\n\r";
                 long fileLength = myFile.length();
                 RandomAccessFile raf = new RandomAccessFile(myFile, "rw");
                 raf.seek(fileLength);
                 raf.writeBytes(toWrite);
                 raf.close();
-
-                //Toast.makeText(this, "Saved line", Toast.LENGTH_SHORT).show();
 
             } catch (IOException e) {
                 e.printStackTrace();
