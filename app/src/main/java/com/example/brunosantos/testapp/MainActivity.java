@@ -25,8 +25,10 @@ import com.google.android.gms.tasks.Task;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 
 public class MainActivity extends AppCompatActivity
         implements SharedPreferences.OnSharedPreferenceChangeListener {
@@ -36,6 +38,8 @@ public class MainActivity extends AppCompatActivity
 
     private ActivityRecognitionClient mActivityRecognitionClient;
     private ActivitiesAdapter mAdapter;
+
+    private int samplingInterval = 5000;
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -94,7 +98,7 @@ public class MainActivity extends AppCompatActivity
     public void requestUpdatesHandler(View view) {
 //Set the activity detection interval. I’m using 5 seconds//
         Task<Void> task = mActivityRecognitionClient.requestActivityUpdates(
-                5000,
+                samplingInterval,
                 getActivityDetectionPendingIntent());
         task.addOnSuccessListener(new OnSuccessListener<Void>() {
             @Override
@@ -129,7 +133,7 @@ public class MainActivity extends AppCompatActivity
              * Google Activity Recognition can detect 8 different activities,
              * each assigned to a respective value;
              * IN_VEHICLE -> 0
-             *ON_BICYCLE -> 1
+             * ON_BICYCLE -> 1
              * ON_FOOT -> 2
              * RUNNING -> 8
              * STILL -> 3
@@ -164,11 +168,14 @@ public class MainActivity extends AppCompatActivity
             checkPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE);
             File externalStorageDir = Environment.getExternalStorageDirectory();
             File myFile = new File(externalStorageDir, "test.txt");
+            Date date = new Date();
+            SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss");
 
             try {
                 String toWrite = Arrays.toString(probabilities)
                         .replace("[","")
-                        .replace("]","") + "\n\r";
+                        .replace("]","") +
+                        ", " + formatter.format(date) + "\n\r";
                 long fileLength = myFile.length();
                 RandomAccessFile raf = new RandomAccessFile(myFile, "rw");
                 raf.seek(fileLength);
