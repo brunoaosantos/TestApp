@@ -33,10 +33,24 @@
         android:onClick="requestUpdatesHandler"
         android:text="@string/track" />
 
+    <Button
+        android:id="@+id/setSampling"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="setSamplingInterval"
+        android:text="Sampling Period" />
+
+    <TextView
+        android:id="@+id/sampling"
+        android:layout_width="153dp"
+        android:layout_height="30dp"
+        android:text="Sampling Interval" />
+
     <ListView
         android:id="@+id/activities_listview"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
+
 </LinearLayout>
 
 

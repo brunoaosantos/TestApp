@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.brunosantos.testapp">
-
+    //for sdk 28 and previous
     <uses-permission android:name="com.google.android.gms.permission.ACTIVITY_RECOGNITION" />
 
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>

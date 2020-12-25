@@ -1,11 +1,13 @@
 package com.example.brunosantos.testapp;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Environment;
 import android.preference.PreferenceManager;
@@ -15,6 +17,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.location.ActivityRecognitionClient;
@@ -34,12 +37,17 @@ public class MainActivity extends AppCompatActivity
         implements SharedPreferences.OnSharedPreferenceChangeListener {
     private Context mContext;
     public static final String DETECTED_ACTIVITY = ".DETECTED_ACTIVITY";
-//Define an ActivityRecognitionClient//
 
+    //Define an ActivityRecognitionClient//
     private ActivityRecognitionClient mActivityRecognitionClient;
     private ActivitiesAdapter mAdapter;
 
-    private int samplingInterval = 5000;
+    //Set the activity detection interval//
+    int samplingInterval = 5000;
+
+    //Set the timer that allows to change the sampling interval
+    int timer = 0;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -96,7 +104,6 @@ public class MainActivity extends AppCompatActivity
         super.onPause();
     }
     public void requestUpdatesHandler(View view) {
-//Set the activity detection interval. I’m using 5 seconds//
         Task<Void> task = mActivityRecognitionClient.requestActivityUpdates(
                 samplingInterval,
                 getActivityDetectionPendingIntent());
@@ -109,12 +116,13 @@ public class MainActivity extends AppCompatActivity
     }
     //Get a PendingIntent//
     private PendingIntent getActivityDetectionPendingIntent() {
-//Send the activity data to our DetectedActivitiesIntentService class//
+        //Send the activity data to our DetectedActivitiesIntentService class//
         Intent intent = new Intent(this, ActivityIntentService.class);
         return PendingIntent.getService(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 
     }
     //Process the list of activities//
+    @SuppressLint("WrongConstant")
     protected void updateDetectedActivitiesList() {
         ArrayList<DetectedActivity> detectedActivities = ActivityIntentService.detectedActivitiesFromJson(
                 PreferenceManager.getDefaultSharedPreferences(mContext)
@@ -146,7 +154,7 @@ public class MainActivity extends AppCompatActivity
             }
             else {
                 /**
-                 * It is necessary to subtract one to the array position ince there is no number 6
+                 * It is necessary to subtract one to the array position once there is no number 6
                  * it jumps from 5 to 7 and 8
                  */
                 probabilities[activity.getType()-1] = Integer.toString(activity.getConfidence());
@@ -206,6 +214,54 @@ public class MainActivity extends AppCompatActivity
                     PERMISSIONS_STORAGE,
                     1);
         }
-     }
+    }
+
+    @SuppressLint("DefaultLocale")
+    public void setSamplingInterval(View view) {
+        /**
+        * For testing purposes only three different sampling interval are considered and used,
+        * being them 5, 10 and 30 seconds respectively
+        */
+        int now = (int) System.currentTimeMillis();
+        int diff = now - timer;
+        if( diff > 1800000) {
+            //means that has passed half an hour since lock
+            timer = 0;
+            Button setSampling = (Button) this.findViewById(R.id.setSampling);
+            setSampling.setBackgroundColor(Color.WHITE);
+        }
+        else if(diff <= 30000) {
+            /**
+            *  if diff <= 30000 means that we are still in the 30 seconds window,
+            *  since the first press where we can
+            *  change the sampling interval
+            */
+            if(timer == 0) {
+                //if timer = 0 means that is the first press and locks the timer
+                timer = (int) System.currentTimeMillis();
+            }
+            if(samplingInterval <= 5000) {
+                samplingInterval = 10000;
+            }
+            else if(samplingInterval == 10000) {
+                samplingInterval = 30000;
+            }
+            else {
+                samplingInterval = 5000;
+            }
+            TextView sampling = (TextView) this.findViewById(R.id.sampling);
+            sampling.setText(String.format("%d", samplingInterval / 1000));
+            writeToFile(new String[]{"New sampling " + samplingInterval});
+            Toast.makeText(this, "Sampling interval changed to: " + samplingInterval/1000, Toast.LENGTH_SHORT).show();
+        }
+        else {
+            //occurred some error or between the 30 seconds window where you can change the sampling
+            // interval and the 30 minutes where you can change again the interval
+            Button setSampling = (Button) this.findViewById(R.id.setSampling);
+            setSampling.setBackgroundColor(Color.RED);
+            Toast.makeText(this, "Sampling period changing interval timed out", Toast.LENGTH_SHORT).show();
+
+        }
+    }
 
 }
