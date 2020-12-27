@@ -5,9 +5,12 @@ import android.annotation.SuppressLint;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.os.BatteryManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.preference.PreferenceManager;
@@ -183,7 +186,8 @@ public class MainActivity extends AppCompatActivity
                 String toWrite = Arrays.toString(probabilities)
                         .replace("[","")
                         .replace("]","") +
-                        ", " + formatter.format(date) + "\n\r";
+                        ", " + formatter.format(date) + ", " +
+                        getBatteryPercentage() + "%\n\r";
                 long fileLength = myFile.length();
                 RandomAccessFile raf = new RandomAccessFile(myFile, "rw");
                 raf.seek(fileLength);
@@ -196,6 +200,24 @@ public class MainActivity extends AppCompatActivity
         }
         else {
             Toast.makeText(this, "Permission denied!", Toast.LENGTH_SHORT).show();       }
+    }
+
+    public int getBatteryPercentage() {
+        if (Build.VERSION.SDK_INT >= 21) {
+            BatteryManager bm = (BatteryManager) this.getSystemService(BATTERY_SERVICE);
+            return bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY);
+        }
+        else {
+            IntentFilter iFilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
+            Intent batteryStatus = this.registerReceiver(null, iFilter);
+
+            int level = batteryStatus != null ? batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) : -1;
+            int scale = batteryStatus != null ? batteryStatus.getIntExtra(BatteryManager.EXTRA_SCALE, -1) : -1;
+
+            double batteryPct = level / (double) scale;
+
+            return (int) (batteryPct * 100);
+        }
     }
 
     public boolean isExternalStorageWritable() {
