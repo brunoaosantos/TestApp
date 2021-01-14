@@ -48,6 +48,9 @@ public class MainActivity extends AppCompatActivity
     //Set the activity detection interval//
     int samplingInterval = 5000;
 
+    //Determines the current state of the sampling interval button, either available or unavailable
+    String samplingState = "available";
+
     //Set the timer that allows to change the sampling interval
     int timer = 0;
 
@@ -99,6 +102,8 @@ public class MainActivity extends AppCompatActivity
         PreferenceManager.getDefaultSharedPreferences(this)
                 .registerOnSharedPreferenceChangeListener(this);
         updateDetectedActivitiesList();
+        updateSamplingInterval();
+        updateSamplingButton();
     }
     @Override
     protected void onPause() {
@@ -107,6 +112,7 @@ public class MainActivity extends AppCompatActivity
         super.onPause();
     }
     public void requestUpdatesHandler(View view) {
+        //starts traking the activivty
         Task<Void> task = mActivityRecognitionClient.requestActivityUpdates(
                 samplingInterval,
                 getActivityDetectionPendingIntent());
@@ -246,11 +252,20 @@ public class MainActivity extends AppCompatActivity
         */
         int now = (int) System.currentTimeMillis();
         int diff = now - timer;
-        if( diff > 1800000) {
+        if( diff > 180000 && timer != 0) {
             //means that has passed half an hour since lock
-            timer = 0;
-            Button setSampling = (Button) this.findViewById(R.id.setSampling);
-            setSampling.setBackgroundColor(Color.WHITE);
+            timer = now;
+            samplingState = "available";
+            updateSamplingButton();
+            setSamplingInterval(view);
+        }
+        else if(timer == 0) {
+            //if timer = 0 means that is the first press and locks the timer
+            timer = (int) System.currentTimeMillis();
+            samplingInterval = 10000;
+            updateSamplingInterval();
+            writeToFile(new String[]{"New sampling " + samplingInterval});
+            Toast.makeText(this, "Sampling interval changed to: " + samplingInterval/1000, Toast.LENGTH_SHORT).show();
         }
         else if(diff <= 30000) {
             /**
@@ -258,10 +273,6 @@ public class MainActivity extends AppCompatActivity
             *  since the first press where we can
             *  change the sampling interval
             */
-            if(timer == 0) {
-                //if timer = 0 means that is the first press and locks the timer
-                timer = (int) System.currentTimeMillis();
-            }
             if(samplingInterval <= 5000) {
                 samplingInterval = 10000;
             }
@@ -271,19 +282,63 @@ public class MainActivity extends AppCompatActivity
             else {
                 samplingInterval = 5000;
             }
-            TextView sampling = (TextView) this.findViewById(R.id.sampling);
-            sampling.setText(String.format("%d", samplingInterval / 1000));
+            updateSamplingInterval();
             writeToFile(new String[]{"New sampling " + samplingInterval});
             Toast.makeText(this, "Sampling interval changed to: " + samplingInterval/1000, Toast.LENGTH_SHORT).show();
         }
         else {
             //occurred some error or between the 30 seconds window where you can change the sampling
             // interval and the 30 minutes where you can change again the interval
-            Button setSampling = (Button) this.findViewById(R.id.setSampling);
-            setSampling.setBackgroundColor(Color.RED);
+            samplingState = "unavailable";
+            updateSamplingButton();
             Toast.makeText(this, "Sampling period changing interval timed out", Toast.LENGTH_SHORT).show();
 
         }
+    }
+
+    @SuppressLint("DefaultLocale")
+    public void updateSamplingInterval () {
+        TextView sampling = (TextView) this.findViewById(R.id.sampling);
+        sampling.setText(String.format("%d", samplingInterval / 1000));
+    }
+
+    public void updateSamplingButton () {
+        Button setSampling = (Button) this.findViewById(R.id.setSampling);
+        if(samplingState.equals("unavailable")) {
+            setSampling.setBackgroundColor(Color.RED);
+        }
+        else {
+            setSampling.setBackgroundColor(Color.WHITE);
+        }
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+
+        // Save UI state changes to the savedInstanceState.
+        // This bundle will be passed to onCreate if the process is
+        // killed and restarted.
+
+        savedInstanceState.putInt("timer", timer);
+        savedInstanceState.putInt("samplingInterval", samplingInterval);
+        savedInstanceState.putString("samplingState", samplingState);
+
+        super.onSaveInstanceState(savedInstanceState);
+    }
+
+//onRestoreInstanceState
+
+    @Override
+    public void onRestoreInstanceState(Bundle savedInstanceState) {
+
+        super.onRestoreInstanceState(savedInstanceState);
+
+        // Restore UI state from the savedInstanceState.
+        // This bundle has also been passed to onCreate.
+
+        timer = savedInstanceState.getInt("timer");
+        samplingInterval = savedInstanceState.getInt("samplingInterval");
+        samplingState = savedInstanceState.getString("samplingState");
     }
 
 }
