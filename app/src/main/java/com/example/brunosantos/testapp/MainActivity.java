@@ -45,6 +45,11 @@ public class MainActivity extends AppCompatActivity
     private ActivityRecognitionClient mActivityRecognitionClient;
     private ActivitiesAdapter mAdapter;
 
+    private Intent writingIntentService;
+
+    //flag tha indicates if a writing intent was already created
+    private boolean isWriting = false;
+
     //Set the activity detection interval//
     int samplingInterval = 5000;
 
@@ -61,6 +66,7 @@ public class MainActivity extends AppCompatActivity
 
         mContext = this;
 
+
 //Retrieve the ListView where we’ll display our activity data//
         ListView detectedActivitiesListView = (ListView) findViewById(R.id.activities_listview);
 
@@ -71,7 +77,7 @@ public class MainActivity extends AppCompatActivity
 //Bind the adapter to the ListView//
         mAdapter = new ActivitiesAdapter(this, detectedActivities);
         detectedActivitiesListView.setAdapter(mAdapter);
-        mActivityRecognitionClient = new ActivityRecognitionClient(this);
+        //mActivityRecognitionClient = new ActivityRecognitionClient(this);
 
         Button walkingButton = (Button)findViewById(R.id.walking);
         walkingButton.setOnClickListener(new View.OnClickListener() {
@@ -104,6 +110,7 @@ public class MainActivity extends AppCompatActivity
         updateDetectedActivitiesList();
         updateSamplingInterval();
         updateSamplingButton();
+        updateTrackingButton();
     }
     @Override
     protected void onPause() {
@@ -111,25 +118,78 @@ public class MainActivity extends AppCompatActivity
                 .unregisterOnSharedPreferenceChangeListener(this);
         super.onPause();
     }
-    public void requestUpdatesHandler(View view) {
-        //starts traking the activivty
+
+    @Override
+    protected void onDestroy() {
+        if (writingIntentService != null) {
+            //force the service to stop
+            mContext.stopService(writingIntentService);
+        }
+        super.onDestroy();
+    }
+
+    /**public void requestUpdatesHandler(View view) {
+        //starts tracking the activity
         Task<Void> task = mActivityRecognitionClient.requestActivityUpdates(
                 samplingInterval,
                 getActivityDetectionPendingIntent());
+        samplingState = "unavailable";
+        updateSamplingButton();
+        timer = (int) System.currentTimeMillis();
         task.addOnSuccessListener(new OnSuccessListener<Void>() {
             @Override
             public void onSuccess(Void result) {
                 updateDetectedActivitiesList();
             }
         });
-    }
+    }**/
+
     //Get a PendingIntent//
-    private PendingIntent getActivityDetectionPendingIntent() {
+    /**private PendingIntent getActivityDetectionPendingIntent() {
         //Send the activity data to our DetectedActivitiesIntentService class//
         Intent intent = new Intent(this, ActivityIntentService.class);
+        if(!isWriting) {
+            //to create only one writing service
+            getWritingPendingIntent();
+            isWriting = true;
+        }
         return PendingIntent.getService(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+    }**/
 
+
+
+    //Get the writing Pending Intent that will perform the asynchronous writes
+    /**private void getWritingPendingIntent() {
+        Intent intent = new Intent(mContext, WritingIntentService.class);
+        //return PendingIntent.getService(mContext,0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        mContext.startService(intent);
+    }**/
+
+    /**
+     * New version of the previous three functions: requestUpdatesHandler, getActivityDetectionPendingIntent
+     * and getWritingPendingIntent
+     */
+
+    public void requestUpdatesHandler(View view) {
+        if (writingIntentService == null) {
+            samplingState = "unavailable";
+            updateSamplingButton();
+            timer = (int) System.currentTimeMillis();
+            updateTrackingButton();
+            //creates the service that will write the tracking results
+            createWritingPendingIntent();
+        }
     }
+
+    private void createWritingPendingIntent() {
+        writingIntentService = new Intent(mContext, WritingIntentService.class);
+        writingIntentService.putExtra("samplingInterval", samplingInterval);
+        //startService is used for services and IntentServices
+        //mContext.startService(writingIntentService);
+        //enqueueWork is the similar function for JobIntentServices
+        WritingIntentService.enqueueWork(mContext, writingIntentService);
+    }
+
     //Process the list of activities//
     @SuppressLint("WrongConstant")
     protected void updateDetectedActivitiesList() {
@@ -169,8 +229,15 @@ public class MainActivity extends AppCompatActivity
                 probabilities[activity.getType()-1] = Integer.toString(activity.getConfidence());
             }
         }
-        //write the activities to the file
-        writeToFile(probabilities);
+        /**
+         * The next line of code was removed from here because this activity no longer performs the
+         * writings, only refreshes the displayed values on the screen
+         *
+         * //write the activities in the file
+         * writeToFile(probabilities);
+         *
+         */
+
     }
 
     @Override
@@ -259,7 +326,7 @@ public class MainActivity extends AppCompatActivity
             updateSamplingButton();
             setSamplingInterval(view);
         }
-        else if(timer == 0) {
+        else if(timer == 0 && samplingState.equals("available")) {
             //if timer = 0 means that is the first press and locks the timer
             timer = (int) System.currentTimeMillis();
             samplingInterval = 10000;
@@ -267,7 +334,7 @@ public class MainActivity extends AppCompatActivity
             writeToFile(new String[]{"New sampling " + samplingInterval});
             Toast.makeText(this, "Sampling interval changed to: " + samplingInterval/1000, Toast.LENGTH_SHORT).show();
         }
-        else if(diff <= 30000) {
+        else if(diff <= 30000 && samplingState.equals("available")) {
             /**
             *  if diff <= 30000 means that we are still in the 30 seconds window,
             *  since the first press where we can
@@ -312,6 +379,16 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
+    public void updateTrackingButton () {
+        Button tracking = (Button) this.findViewById(R.id.get_activity);
+        if(samplingState.equals("unavailable")) {
+            tracking.setBackgroundColor(Color.RED);
+        }
+        else {
+            tracking.setBackgroundColor(Color.GRAY);
+        }
+    }
+
     @Override
     public void onSaveInstanceState(Bundle savedInstanceState) {
 
@@ -326,7 +403,7 @@ public class MainActivity extends AppCompatActivity
         super.onSaveInstanceState(savedInstanceState);
     }
 
-//onRestoreInstanceState
+    //onRestoreInstanceState
 
     @Override
     public void onRestoreInstanceState(Bundle savedInstanceState) {

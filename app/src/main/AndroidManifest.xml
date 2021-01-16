@@ -6,6 +6,8 @@
 
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -17,6 +19,10 @@
         <service
             android:name=".ActivityIntentService"
             android:exported="false" />
+
+        <service
+            android:name=".WritingIntentService"
+            android:permission="android.permission.BIND_JOB_SERVICE"/>
 
         <activity android:name=".MainActivity">
             <intent-filter>
