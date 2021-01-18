@@ -1,7 +1,6 @@
 package com.example.brunosantos.testapp;
 
 import android.annotation.SuppressLint;
-import android.app.IntentService;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
@@ -14,39 +13,50 @@ import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-//Extend IntentService//
-public class ActivityIntentService extends IntentService {
-    protected static final String TAG = "Activity";
+
+import androidx.annotation.NonNull;
+import androidx.core.app.JobIntentService;
+
+//Extend JobIntentService//
+public class ActivityIntentService extends JobIntentService {
+
+    /**
+     * Unique job ID for this service.
+     */
+    private static final int JOB_ID = 3;
+
     //Call the super IntentService constructor with the name for the worker thread//
     public ActivityIntentService() {
-        super(TAG);
+        super();
     }
     @Override
     public void onCreate() {
         super.onCreate();
     }
-//Define an onHandleIntent() method, which will be called whenever an activity detection update is available//
+
+    public static void enqueueWork(Context context, Intent intent) {
+        enqueueWork(context, ActivityIntentService.class, JOB_ID, intent);
+    }
 
     @Override
-    protected void onHandleIntent(Intent intent) {
-//Check whether the Intent contains activity recognition data//
+    protected void onHandleWork(@NonNull Intent intent) {
+        //Check whether the Intent contains activity recognition data//
         if (ActivityRecognitionResult.hasResult(intent)) {
-
-//If data is available, then extract the ActivityRecognitionResult from the Intent//
+            //If data is available, then extract the ActivityRecognitionResult from the Intent//
             ActivityRecognitionResult result = ActivityRecognitionResult.extractResult(intent);
 
-//Get an array of DetectedActivity objects//
+            //Get an array of DetectedActivity objects//
             ArrayList<DetectedActivity> detectedActivities = (ArrayList) result.getProbableActivities();
             PreferenceManager.getDefaultSharedPreferences(this)
-                    .edit()
-                    .putString(MainActivity.DETECTED_ACTIVITY,
-                            detectedActivitiesToJson(detectedActivities))
-                    .apply();
+                .edit()
+                .putString(MainActivity.DETECTED_ACTIVITY,
+                detectedActivitiesToJson(detectedActivities))
+                .apply();
 
         }
     }
-//Convert the code for the detected activity type, into the corresponding string//
 
+    //Convert the code for the detected activity type, into the corresponding string//
     @SuppressLint("StringFormatInvalid")
     static String getActivityString(Context context, int detectedActivityType) {
         Resources resources = context.getResources();
@@ -80,10 +90,12 @@ public class ActivityIntentService extends IntentService {
             DetectedActivity.TILTING,
             DetectedActivity.UNKNOWN
     };
+
     static String detectedActivitiesToJson(ArrayList<DetectedActivity> detectedActivitiesList) {
         Type type = new TypeToken<ArrayList<DetectedActivity>>() {}.getType();
         return new Gson().toJson(detectedActivitiesList, type);
     }
+
     static ArrayList<DetectedActivity> detectedActivitiesFromJson(String jsonArray) {
         Type listType = new TypeToken<ArrayList<DetectedActivity>>(){}.getType();
         ArrayList<DetectedActivity> detectedActivities = new Gson().fromJson(jsonArray, listType);

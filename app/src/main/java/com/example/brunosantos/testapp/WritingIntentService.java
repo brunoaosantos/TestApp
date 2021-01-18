@@ -1,7 +1,6 @@
 package com.example.brunosantos.testapp;
 
 import android.annotation.SuppressLint;
-import android.app.IntentService;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
@@ -31,7 +30,6 @@ import androidx.core.app.JobIntentService;
 
 public class WritingIntentService extends JobIntentService
         implements SharedPreferences.OnSharedPreferenceChangeListener{
-    protected static final String TAG = "Writing";
 
     /**
      * Unique job ID for this service.
@@ -71,10 +69,8 @@ public class WritingIntentService extends JobIntentService
 
     @Override
     protected void onHandleWork(Intent intent) {
-        System.out.println("no novo serviço");
         samplingInt = intent.getIntExtra("samplingInterval",5000);
         if (samplingInt == 5000) {
-            System.out.println("nao preciso de fazer nada");
             //starts tracking the activity
             while (true) {
                 try {
@@ -85,7 +81,6 @@ public class WritingIntentService extends JobIntentService
                         @Override
                         public void onSuccess(Void result) {
                             updateDetectedActivitiesList();
-                            System.out.println("A ESCREVER nos 5");
                         }
                     });
                     Thread.sleep(5000);
@@ -100,7 +95,6 @@ public class WritingIntentService extends JobIntentService
              * system writing the same amount of time no matter the sampling interval
              * so it is needed to create a thread to perform those writings
              */
-            System.out.println("preciso de escrever ++++++++++++++++++");
             final int fakeWritings = (samplingInt / writingFrequency) - 1;
             int cnt = 0;
             while (true) {
@@ -115,7 +109,6 @@ public class WritingIntentService extends JobIntentService
                             @Override
                             public void onSuccess(Void result) {
                                 updateDetectedActivitiesList();
-                                System.out.println("A ESCREVER nos " + samplingInt);
                             }
                         });
                         Thread.sleep(5000);
@@ -129,7 +122,6 @@ public class WritingIntentService extends JobIntentService
                         else {
                             cnt++;
                         }
-                        System.out.println("escrita falsa--------------- " + samplingInt);
                         writeToFileService(new String[]{"nothing " + formatter1.format(date1)});
                         Thread.sleep(5000);
                     }
@@ -149,8 +141,8 @@ public class WritingIntentService extends JobIntentService
 
     private PendingIntent getActivityDetectionPendingIntent() {
         //Send the activity data to our DetectedActivitiesIntentService class//
-        Intent intent = new Intent(this, ActivityIntentService.class);
-        return PendingIntent.getService(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        Intent intent = new Intent(this, ActivityReceiver.class);
+        return PendingIntent.getBroadcast(this, 0, intent,PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
     //Process the list of activities//
@@ -247,5 +239,5 @@ public class WritingIntentService extends JobIntentService
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String s) {
 
     }
-    
+
 }
