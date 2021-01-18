@@ -2,7 +2,6 @@ package com.example.brunosantos.testapp;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -25,8 +24,6 @@ import android.widget.Toast;
 
 import com.google.android.gms.location.ActivityRecognitionClient;
 import com.google.android.gms.location.DetectedActivity;
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
 
 import java.io.File;
 import java.io.IOException;
@@ -128,48 +125,6 @@ public class MainActivity extends AppCompatActivity
         super.onDestroy();
     }
 
-    /**public void requestUpdatesHandler(View view) {
-        //starts tracking the activity
-        Task<Void> task = mActivityRecognitionClient.requestActivityUpdates(
-                samplingInterval,
-                getActivityDetectionPendingIntent());
-        samplingState = "unavailable";
-        updateSamplingButton();
-        timer = (int) System.currentTimeMillis();
-        task.addOnSuccessListener(new OnSuccessListener<Void>() {
-            @Override
-            public void onSuccess(Void result) {
-                updateDetectedActivitiesList();
-            }
-        });
-    }**/
-
-    //Get a PendingIntent//
-    /**private PendingIntent getActivityDetectionPendingIntent() {
-        //Send the activity data to our DetectedActivitiesIntentService class//
-        Intent intent = new Intent(this, ActivityIntentService.class);
-        if(!isWriting) {
-            //to create only one writing service
-            getWritingPendingIntent();
-            isWriting = true;
-        }
-        return PendingIntent.getService(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-    }**/
-
-
-
-    //Get the writing Pending Intent that will perform the asynchronous writes
-    /**private void getWritingPendingIntent() {
-        Intent intent = new Intent(mContext, WritingIntentService.class);
-        //return PendingIntent.getService(mContext,0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-        mContext.startService(intent);
-    }**/
-
-    /**
-     * New version of the previous three functions: requestUpdatesHandler, getActivityDetectionPendingIntent
-     * and getWritingPendingIntent
-     */
-
     public void requestUpdatesHandler(View view) {
         if (writingIntentService == null) {
             samplingState = "unavailable";
@@ -184,9 +139,6 @@ public class MainActivity extends AppCompatActivity
     private void createWritingPendingIntent() {
         writingIntentService = new Intent(mContext, WritingIntentService.class);
         writingIntentService.putExtra("samplingInterval", samplingInterval);
-        //startService is used for services and IntentServices
-        //mContext.startService(writingIntentService);
-        //enqueueWork is the similar function for JobIntentServices
         WritingIntentService.enqueueWork(mContext, writingIntentService);
     }
 
@@ -229,15 +181,6 @@ public class MainActivity extends AppCompatActivity
                 probabilities[activity.getType()-1] = Integer.toString(activity.getConfidence());
             }
         }
-        /**
-         * The next line of code was removed from here because this activity no longer performs the
-         * writings, only refreshes the displayed values on the screen
-         *
-         * //write the activities in the file
-         * writeToFile(probabilities);
-         *
-         */
-
     }
 
     @Override
@@ -294,7 +237,6 @@ public class MainActivity extends AppCompatActivity
     }
 
     public boolean isExternalStorageWritable() {
-        //System.out.println(Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState()));
         return Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState());
     }
 

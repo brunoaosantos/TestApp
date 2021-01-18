@@ -43,11 +43,6 @@ public class WritingIntentService extends JobIntentService
 
     //Define an ActivityRecognitionClient//
     private ActivityRecognitionClient mActivityRecognitionClient;
-    //private ActivitiesAdapter mAdapter;
-
-    /**
-     * End of first part
-     */
 
     //Keeps the sampling interval
     protected int samplingInt;
@@ -58,11 +53,7 @@ public class WritingIntentService extends JobIntentService
     Date date1 = new Date();
     SimpleDateFormat formatter1 = new SimpleDateFormat("HH:mm:ss");
 
-    /**
-     * Creates an IntentService.  Invoked by your subclass's constructor.
-     *
-     * TAG Used to name the worker thread, important only for debugging.
-     */
+
     public WritingIntentService() {
         super();
     }
@@ -168,7 +159,6 @@ public class WritingIntentService extends JobIntentService
         ArrayList<DetectedActivity> detectedActivities = ActivityIntentService.detectedActivitiesFromJson(
                 PreferenceManager.getDefaultSharedPreferences(mContext)
                         .getString(DETECTED_ACTIVITY, ""));
-        //mAdapter.updateActivities(detectedActivities);
 
         /** probabilities is an array that stores all 8 possible activities detected by
          * Google Activity Recognition, starting all at zero because only the activities with
@@ -250,51 +240,12 @@ public class WritingIntentService extends JobIntentService
     }
 
     public boolean isExternalStorageWritableService() {
-        //System.out.println(Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState()));
         return Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState());
-    }
-
-    public void setSampling(int sampling) {
-        samplingInt = sampling;
-        System.out.println("sampling " + samplingInt);
     }
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String s) {
 
     }
-
-    /**
-     * potentially garbage
-     * Timer timer = new Timer();
-     *             timer.schedule(new TimerTask() {
-     *
-     *             @Override
-     *             public void run() {
-     *             if (cnt <= fakeWritings || cnt != 0) {
-     *                 //need to perform an empty writing
-     *                 cnt++;
-     *                 System.out.println("escrita falsa--------------- " + samplingInt);
-     *                 writeToFileService(new String[]{"nothing " + formatter1.format(date1)});
-     *                 //return;
-     *             }
-     *             else {
-     *                 //means the cnt == 0 so it must be performed a real writing
-     *                 Task<Void> task = mActivityRecognitionClient.requestActivityUpdates(
-     *                         samplingInt,
-     *                         getActivityDetectionPendingIntent());
-     *                 task.addOnSuccessListener(new OnSuccessListener<Void>() {
-     *                     @Override
-     *                     public void onSuccess(Void result) {
-     *                         updateDetectedActivitiesList();
-     *                     }
-     *                 });
-     *
-     *                 }
-     *
-     *                 }
-     *                 },0, writingFrequency);
-     */
-
-
+    
 }
