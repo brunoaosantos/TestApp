@@ -70,10 +70,17 @@ public class WritingIntentService extends JobIntentService
     @Override
     protected void onHandleWork(Intent intent) {
         samplingInt = intent.getIntExtra("samplingInterval",5000);
+        int startTracking = (int) System.currentTimeMillis();
         if (samplingInt == 5000) {
             //starts tracking the activity
             while (true) {
                 try {
+                    int now = (int) System.currentTimeMillis();
+                    if ((now - startTracking) > 360000) {
+                        //one hour after started tracking
+                        //force stop otherwise the service will be always running
+                        break;
+                    }
                     Task<Void> task = mActivityRecognitionClient.requestActivityUpdates(
                             samplingInt,
                             getActivityDetectionPendingIntent());
@@ -99,6 +106,12 @@ public class WritingIntentService extends JobIntentService
             int cnt = 0;
             while (true) {
                 try {
+                    int now = (int) System.currentTimeMillis();
+                    if ((now - startTracking) > 360000) {
+                        //one hour after started tracking
+                        //force stop otherwise the service will be always running
+                        break;
+                    }
                     if (cnt == 0) {
                         //means the cnt == 0 so it must be performed a real writing
                         cnt++;
