@@ -48,6 +48,9 @@ public class WritingIntentService extends JobIntentService
     //Normal frequency of writings
     protected int writingFrequency = 5000;
 
+    //Determines if the thread was stopped by the Job Scheduler
+    protected boolean endTime = false;
+
     Date date1 = new Date();
     SimpleDateFormat formatter1 = new SimpleDateFormat("HH:mm:ss");
 
@@ -76,8 +79,8 @@ public class WritingIntentService extends JobIntentService
             while (true) {
                 try {
                     int now = (int) System.currentTimeMillis();
-                    if ((now - startTracking) > 360000) {
-                        //one hour after started tracking
+                    if ((now - startTracking) > 3600000 || endTime) {
+                        //one hour after started tracking or job interrupted by android's Job Scheduler
                         //force stop otherwise the service will be always running
                         break;
                     }
@@ -107,8 +110,8 @@ public class WritingIntentService extends JobIntentService
             while (true) {
                 try {
                     int now = (int) System.currentTimeMillis();
-                    if ((now - startTracking) > 360000) {
-                        //one hour after started tracking
+                    if ((now - startTracking) > 3600000 || endTime) {
+                        //one hour after started tracking or job interrupted by android's Job Scheduler
                         //force stop otherwise the service will be always running
                         break;
                     }
@@ -253,4 +256,12 @@ public class WritingIntentService extends JobIntentService
 
     }
 
+    @Override
+    public boolean onStopCurrentWork() {
+        //kill current job
+        endTime = true;
+        //to force to continue
+        writeToFileService(new String[]{"stop"});
+        return true;
+    }
 }
