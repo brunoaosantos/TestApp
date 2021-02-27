@@ -93,13 +93,13 @@ public class WritingIntentService extends JobIntentService
                             updateDetectedActivitiesList();
                         }
                     });
-                    Thread.sleep(5000);
+                    Thread.sleep(writingFrequency);
                 }catch (Exception e) {
                     e.printStackTrace();
                 }
             }
         }
-        else if (samplingInt == 10000 || samplingInt == 30000) {
+        else if (samplingInt == 10000 || samplingInt == 30000 | samplingInt == 60000) {
             /**
              * means that it is necessary to preform empty writings to keep the
              * system writing the same amount of time no matter the sampling interval
@@ -127,7 +127,7 @@ public class WritingIntentService extends JobIntentService
                                 updateDetectedActivitiesList();
                             }
                         });
-                        Thread.sleep(5000);
+                        Thread.sleep(writingFrequency);
                     }
                     else if (cnt <= fakeWritings) {
                         //need to perform an empty writing
@@ -139,7 +139,7 @@ public class WritingIntentService extends JobIntentService
                             cnt++;
                         }
                         writeToFileService(new String[]{"nothing " + formatter1.format(date1)});
-                        Thread.sleep(5000);
+                        Thread.sleep(writingFrequency);
                     }
                     else {
                         Toast.makeText(this, "ERROR WITH CNT!", Toast.LENGTH_SHORT).show();

@@ -256,8 +256,8 @@ public class MainActivity extends AppCompatActivity
     @SuppressLint("DefaultLocale")
     public void setSamplingInterval(View view) {
         /**
-        * For testing purposes only three different sampling interval are considered and used,
-        * being them 5, 10 and 30 seconds respectively
+        * For testing purposes only four different sampling interval are considered and used,
+        * being them 5, 10, 30 and 60 seconds respectively
         */
         int now = (int) System.currentTimeMillis();
         int diff = now - timer;
@@ -288,6 +288,9 @@ public class MainActivity extends AppCompatActivity
             else if(samplingInterval == 10000) {
                 samplingInterval = 30000;
             }
+            else if(samplingInterval == 30000) {
+                samplingInterval = 60000;
+            }
             else {
                 samplingInterval = 5000;
             }
@@ -317,7 +320,7 @@ public class MainActivity extends AppCompatActivity
             setSampling.setBackgroundColor(Color.RED);
         }
         else {
-            setSampling.setBackgroundColor(Color.WHITE);
+            setSampling.setBackgroundColor(Color.GRAY);
         }
     }
 
