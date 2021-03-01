@@ -2,6 +2,7 @@ package com.example.brunosantos.testapp;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -12,11 +13,18 @@ import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.PowerManager;
 import android.preference.PreferenceManager;
+
+import androidx.annotation.RequiresApi;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -63,15 +71,37 @@ public class MainActivity extends AppCompatActivity
 
         mContext = this;
 
+        // register local broadcast
+        IntentFilter filter = new IntentFilter(WritingIntentService.CUSTOM_ACTION);
+        LocalBroadcastManager.getInstance(mContext).registerReceiver(mReceiver, filter);
 
-//Retrieve the ListView where we’ll display our activity data//
+        /** not necessary once onResume is called always after onCreate and sampling interval is stored
+        //check if the activity was previously launched
+        Bundle extras = getIntent().getExtras();
+        if (extras != null) {
+            //means that is the re-launched activity and not the first time launch activity
+            // so it is necessary to store the previous defined sampling value
+            SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss");
+            samplingInterval = extras.getInt("samplingInterval");
+            writeToFile(new String[]{"AQUI " + samplingInterval + " --- " + formatter.format(new Date())});
+            samplingState = "unavailable";
+            updateSamplingButton();
+            updateTrackingButton();
+        }
+        else {
+            samplingInterval = 5000;
+        }
+        updateSamplingInterval();
+        **/
+
+        //Retrieve the ListView where we’ll display our activity data//
         ListView detectedActivitiesListView = (ListView) findViewById(R.id.activities_listview);
 
         ArrayList<DetectedActivity> detectedActivities = ActivityIntentService.detectedActivitiesFromJson(
                 PreferenceManager.getDefaultSharedPreferences(this).getString(
                         DETECTED_ACTIVITY, ""));
 
-//Bind the adapter to the ListView//
+        //Bind the adapter to the ListView//
         mAdapter = new ActivitiesAdapter(this, detectedActivities);
         detectedActivitiesListView.setAdapter(mAdapter);
         //mActivityRecognitionClient = new ActivityRecognitionClient(this);
@@ -99,6 +129,7 @@ public class MainActivity extends AppCompatActivity
         });
 
     }
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -109,6 +140,7 @@ public class MainActivity extends AppCompatActivity
         updateSamplingButton();
         updateTrackingButton();
     }
+
     @Override
     protected void onPause() {
         PreferenceManager.getDefaultSharedPreferences(this)
@@ -118,13 +150,42 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     protected void onDestroy() {
-        if (writingIntentService != null) {
-            //force the service to stop
-            mContext.stopService(writingIntentService);
-        }
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mReceiver);
         super.onDestroy();
     }
 
+    /**
+     * Broadcast receiver to receive the data
+     */
+    private BroadcastReceiver mReceiver = new BroadcastReceiver() {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss");
+            writeToFile(new String[]{"JOB terminated at " + formatter.format(new Date())});
+            //launch a new job intent service, once when this function is triggered means that the previous job has stopped
+            //wakeUpScreen();
+            //bringActivityToFront();
+            createWritingPendingIntent();
+            /**
+             * other possible solution, kill the activity and launch a new one
+             */
+            //startNewActivity();
+        }
+    };
+
+    public void startNewActivity() {
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.putExtra("samplingInterval", samplingInterval);
+        startActivity(intent);
+        //kills the current activity
+        //finishActivity(1);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+            finishAffinity();
+        }
+    }
+
+    //called by clicking on start tracking button
     public void requestUpdatesHandler(View view) {
         if (writingIntentService == null) {
             samplingState = "unavailable";
@@ -361,6 +422,35 @@ public class MainActivity extends AppCompatActivity
         timer = savedInstanceState.getInt("timer");
         samplingInterval = savedInstanceState.getInt("samplingInterval");
         samplingState = savedInstanceState.getString("samplingState");
+    }
+
+    private void wakeUpScreen() {
+        /** old solution
+        Window window = this.getWindow();
+        window.addFlags(WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
+        window.addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED);
+        window.addFlags(WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
+         **/
+        //new solution
+        PowerManager pm = (PowerManager)mContext.getSystemService(Context.POWER_SERVICE);
+        boolean isScreenOn = pm.isScreenOn();
+        if(!isScreenOn)
+        {
+            PowerManager.WakeLock wl = pm.newWakeLock(PowerManager.FULL_WAKE_LOCK |
+                    PowerManager.ACQUIRE_CAUSES_WAKEUP |
+                    PowerManager.ON_AFTER_RELEASE, "testapp:MyLock");
+            wl.acquire(10000);
+            PowerManager.WakeLock wl_cpu = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,"testapp:MyCpuLock");
+
+            wl_cpu.acquire(10000);
+        }
+    }
+
+    private void bringActivityToFront() {
+        wakeUpScreen();
+        Intent intent = new Intent(mContext, MainActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+        startActivity(intent);
     }
 
 }

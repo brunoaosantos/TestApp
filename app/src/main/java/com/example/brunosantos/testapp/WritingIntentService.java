@@ -10,6 +10,7 @@ import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Environment;
 import android.preference.PreferenceManager;
+import android.util.Log;
 import android.widget.Toast;
 
 import com.google.android.gms.location.ActivityRecognitionClient;
@@ -26,6 +27,7 @@ import java.util.Arrays;
 import java.util.Date;
 
 import androidx.core.app.JobIntentService;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 
 public class WritingIntentService extends JobIntentService
@@ -55,6 +57,9 @@ public class WritingIntentService extends JobIntentService
     SimpleDateFormat formatter1 = new SimpleDateFormat("HH:mm:ss");
 
 
+    public static final String CUSTOM_ACTION = "YOUR_CUSTOM_ACTION";
+
+
     public WritingIntentService() {
         super();
     }
@@ -64,6 +69,7 @@ public class WritingIntentService extends JobIntentService
         mContext = this;
         mActivityRecognitionClient = new ActivityRecognitionClient(mContext);
         super.onCreate();
+        writeToFileService(new String[]{"CREATED: " + formatter1.format(new Date())});
     }
 
     public static void enqueueWork(Context context, Intent intent) {
@@ -79,8 +85,8 @@ public class WritingIntentService extends JobIntentService
             while (true) {
                 try {
                     int now = (int) System.currentTimeMillis();
-                    if ((now - startTracking) > 3600000 || endTime) {
-                        //one hour after started tracking or job interrupted by android's Job Scheduler
+                    if ((now - startTracking) > 360000 || endTime || isStopped()) {
+                        //six minutes after started tracking or job interrupted by android's Job Scheduler
                         //force stop otherwise the service will be always running
                         break;
                     }
@@ -110,8 +116,8 @@ public class WritingIntentService extends JobIntentService
             while (true) {
                 try {
                     int now = (int) System.currentTimeMillis();
-                    if ((now - startTracking) > 3600000 || endTime) {
-                        //one hour after started tracking or job interrupted by android's Job Scheduler
+                    if ((now - startTracking) > 360000 || endTime || isStopped()) {
+                        //six minutes after started tracking or job interrupted by android's Job Scheduler
                         //force stop otherwise the service will be always running
                         break;
                     }
@@ -256,12 +262,46 @@ public class WritingIntentService extends JobIntentService
 
     }
 
+    /**
+     * job exceeded maximum time and JobManager kills it
+     * if returned true it will reschedule the work, otherwise it ends completely
+     */
     @Override
     public boolean onStopCurrentWork() {
         //kill current job
         endTime = true;
         //to force to continue
-        writeToFileService(new String[]{"stop"});
-        return true;
+        writeToFileService(new String[]{"stop job " + formatter1.format(new Date())});
+        stopSelf();
+        return false;
+    }
+
+    @Override
+    public void onDestroy() {
+        writeToFileService(new String[]{"destroy job " + formatter1.format(new Date())});
+        //kill current job intent service
+        stopSelf();
+        sendLocalBroadcast();
+        super.onDestroy();
+    }
+
+    /**
+     * Control whether code executing in onHandleWork(Intent) will be interrupted if the job is stopped.
+     * By default this is false.
+     * If called and set to true, any time onStopCurrentWork() is called,
+     * the class will first call AsyncTask.cancel(true) to interrupt the running task.
+     */
+    @Override
+    public void setInterruptIfStopped(boolean interruptIfStopped) {
+        super.setInterruptIfStopped(true);
+    }
+
+    private void sendLocalBroadcast() {
+
+        Intent newIntent = new Intent(CUSTOM_ACTION);
+        Log.d(WritingIntentService.class.getSimpleName(), "sending broadcast");
+
+        // send local broadcast
+        LocalBroadcastManager.getInstance(this).sendBroadcast(newIntent);
     }
 }
