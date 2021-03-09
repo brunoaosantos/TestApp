@@ -52,9 +52,6 @@ public class MainActivity extends AppCompatActivity
 
     private Intent writingIntentService;
 
-    //flag tha indicates if a writing intent was already created
-    private boolean isWriting = false;
-
     //Set the activity detection interval//
     int samplingInterval = 5000;
 
@@ -64,6 +61,8 @@ public class MainActivity extends AppCompatActivity
     //Set the timer that allows to change the sampling interval
     int timer = 0;
 
+    SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss");
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -71,28 +70,12 @@ public class MainActivity extends AppCompatActivity
 
         mContext = this;
 
+        //ask for writing permissions
+        checkPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+
         // register local broadcast
         IntentFilter filter = new IntentFilter(WritingIntentService.CUSTOM_ACTION);
         LocalBroadcastManager.getInstance(mContext).registerReceiver(mReceiver, filter);
-
-        /** not necessary once onResume is called always after onCreate and sampling interval is stored
-        //check if the activity was previously launched
-        Bundle extras = getIntent().getExtras();
-        if (extras != null) {
-            //means that is the re-launched activity and not the first time launch activity
-            // so it is necessary to store the previous defined sampling value
-            SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss");
-            samplingInterval = extras.getInt("samplingInterval");
-            writeToFile(new String[]{"AQUI " + samplingInterval + " --- " + formatter.format(new Date())});
-            samplingState = "unavailable";
-            updateSamplingButton();
-            updateTrackingButton();
-        }
-        else {
-            samplingInterval = 5000;
-        }
-        updateSamplingInterval();
-        **/
 
         //Retrieve the ListView where we’ll display our activity data//
         ListView detectedActivitiesListView = (ListView) findViewById(R.id.activities_listview);
@@ -161,29 +144,12 @@ public class MainActivity extends AppCompatActivity
 
         @Override
         public void onReceive(Context context, Intent intent) {
-            SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss");
             writeToFile(new String[]{"JOB terminated at " + formatter.format(new Date())});
             //launch a new job intent service, once when this function is triggered means that the previous job has stopped
-            //wakeUpScreen();
-            //bringActivityToFront();
             createWritingPendingIntent();
-            /**
-             * other possible solution, kill the activity and launch a new one
-             */
-            //startNewActivity();
         }
     };
 
-    public void startNewActivity() {
-        Intent intent = new Intent(this, MainActivity.class);
-        intent.putExtra("samplingInterval", samplingInterval);
-        startActivity(intent);
-        //kills the current activity
-        //finishActivity(1);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-            finishAffinity();
-        }
-    }
 
     //called by clicking on start tracking button
     public void requestUpdatesHandler(View view) {
@@ -257,7 +223,6 @@ public class MainActivity extends AppCompatActivity
             File externalStorageDir = Environment.getExternalStorageDirectory();
             File myFile = new File(externalStorageDir, "test.txt");
             Date date = new Date();
-            SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss");
 
             try {
                 String toWrite = Arrays.toString(probabilities)
@@ -422,35 +387,6 @@ public class MainActivity extends AppCompatActivity
         timer = savedInstanceState.getInt("timer");
         samplingInterval = savedInstanceState.getInt("samplingInterval");
         samplingState = savedInstanceState.getString("samplingState");
-    }
-
-    private void wakeUpScreen() {
-        /** old solution
-        Window window = this.getWindow();
-        window.addFlags(WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
-        window.addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED);
-        window.addFlags(WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
-         **/
-        //new solution
-        PowerManager pm = (PowerManager)mContext.getSystemService(Context.POWER_SERVICE);
-        boolean isScreenOn = pm.isScreenOn();
-        if(!isScreenOn)
-        {
-            PowerManager.WakeLock wl = pm.newWakeLock(PowerManager.FULL_WAKE_LOCK |
-                    PowerManager.ACQUIRE_CAUSES_WAKEUP |
-                    PowerManager.ON_AFTER_RELEASE, "testapp:MyLock");
-            wl.acquire(10000);
-            PowerManager.WakeLock wl_cpu = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,"testapp:MyCpuLock");
-
-            wl_cpu.acquire(10000);
-        }
-    }
-
-    private void bringActivityToFront() {
-        wakeUpScreen();
-        Intent intent = new Intent(mContext, MainActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-        startActivity(intent);
     }
 
 }

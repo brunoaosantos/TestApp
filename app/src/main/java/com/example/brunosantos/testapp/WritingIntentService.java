@@ -54,7 +54,7 @@ public class WritingIntentService extends JobIntentService
     protected boolean endTime = false;
 
     Date date1 = new Date();
-    SimpleDateFormat formatter1 = new SimpleDateFormat("HH:mm:ss");
+    SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss");
 
 
     public static final String CUSTOM_ACTION = "YOUR_CUSTOM_ACTION";
@@ -69,7 +69,7 @@ public class WritingIntentService extends JobIntentService
         mContext = this;
         mActivityRecognitionClient = new ActivityRecognitionClient(mContext);
         super.onCreate();
-        writeToFileService(new String[]{"CREATED: " + formatter1.format(new Date())});
+        writeToFileService(new String[]{"CREATED: " + formatter.format(new Date())});
     }
 
     public static void enqueueWork(Context context, Intent intent) {
@@ -144,7 +144,7 @@ public class WritingIntentService extends JobIntentService
                         else {
                             cnt++;
                         }
-                        writeToFileService(new String[]{"nothing " + formatter1.format(date1)});
+                        writeToFileService(new String[]{"nothing " + formatter.format(date1)});
                         Thread.sleep(writingFrequency);
                     }
                     else {
@@ -213,7 +213,6 @@ public class WritingIntentService extends JobIntentService
             File externalStorageDir = Environment.getExternalStorageDirectory();
             File myFile = new File(externalStorageDir, "test.txt");
             Date date = new Date();
-            SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss");
 
             try {
                 String toWrite = Arrays.toString(probabilities)
@@ -270,15 +269,14 @@ public class WritingIntentService extends JobIntentService
     public boolean onStopCurrentWork() {
         //kill current job
         endTime = true;
-        //to force to continue
-        writeToFileService(new String[]{"stop job " + formatter1.format(new Date())});
-        stopSelf();
+        //to force to stop
+        writeToFileService(new String[]{"stop job " + formatter.format(new Date())});
         return false;
     }
 
     @Override
     public void onDestroy() {
-        writeToFileService(new String[]{"destroy job " + formatter1.format(new Date())});
+        writeToFileService(new String[]{"destroy job " + formatter.format(new Date())});
         //kill current job intent service
         stopSelf();
         sendLocalBroadcast();
